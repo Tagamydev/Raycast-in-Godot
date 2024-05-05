@@ -124,13 +124,14 @@ func	_ready():
 	fovMulti = float(fov) / float(width);
 	calculate_walls();
 
+# funtions
 func	ddaGetnextX(nextx: float, raya: float):
 	return ((nextx - playerPos[0]) / (cos(degToRad(raya))));
 	
-
 func	ddaGetnextY(nexty: float, raya: float):
 	return ((nexty - playerPos[1]) / (-sin(degToRad(raya))));
 	
+
 func	ddaCheckMap(mapx: float, mapy: float):
 	if mapx < 0 or mapy < 0:
 		return (false);
@@ -178,13 +179,13 @@ func	ddaCalculateXLeft(raya: float):
 	rayx = int(playerPos[0]);
 	delty = -sin(degToRad(raya));
 	rayy = playerPos[1] + delty * ddaGetnextX(rayx, raya);
-	
+
 	# check if this ray hits a wall, if not then start the loop
 	if ddaCheckMap(rayx - 1, rayy) == false:
 		return Vector2(rayx, rayy);
 	if Map[rayy][rayx - 1] == 1:
 		return Vector2(rayx, rayy);
-		
+
 	nextx = (int(rayx - 1) - rayx) / (cos(degToRad(raya)));
 	z = 0;
 	while z < 10:
@@ -196,45 +197,116 @@ func	ddaCalculateXLeft(raya: float):
 			return Vector2(rayx, rayy);
 		z = z + 1;
 	return (Vector2(rayx, rayy));
-	
-	"""
+
+func	ddaCalculateYUp(raya: float):
 	var rayx = 0.0;
 	var	rayy = 0.0;
-	var	nextx = 0.0;
+	var	delty = 0.0;
+	var	nexty = 0.0;
+	var	z = 0;
 	
-	rayx = int(playerPos[0]);
-	rayy = playerPos[1] - sin(degToRad(raya)) * ddaGetnextX(rayx, raya);
-	
+	rayy = int(playerPos[1]);
+	delty = cos(degToRad(raya));
+	rayx = playerPos[0] + delty * ddaGetnextY(rayy, raya);
+
+	# check if this ray hits a wall, if not then start the loop
+	if ddaCheckMap(rayx, rayy - 1) == false:
+		return Vector2(rayx, rayy);
+	if Map[rayy - 1][rayx] == 1:
+		return Vector2(rayx, rayy);
+
+	nexty = (int(rayy - 1) - rayy) / (-sin(degToRad(raya)));
+	z = 0;
+	while z < 10:
+		rayy = int(rayy - 1);
+		rayx = rayx + delty * nexty;
+		if ddaCheckMap(rayx, rayy - 1) == false:
+			return Vector2(rayx, rayy);
+		if Map[rayy - 1][rayx] == 1:
+			return Vector2(rayx, rayy);
+		z = z + 1;
 	return (Vector2(rayx, rayy));
-	"""
+
+func	ddaCalculateYDown(raya: float):
+	var rayx = 0.0;
+	var	rayy = 0.0;
+	var	delty = 0.0;
+	var	nexty = 0.0;
+	var	z = 0;
 	
+	rayy = int(playerPos[1] + 1);
+	delty = cos(degToRad(raya));
+	rayx = playerPos[0] + delty * ddaGetnextY(rayy, raya);
+
+	# check if this ray hits a wall, if not then start the loop
+	if ddaCheckMap(rayx, rayy) == false:
+		return Vector2(rayx, rayy);
+	if Map[rayy][rayx] == 1:
+		return Vector2(rayx, rayy);
+
+	nexty = (int(rayy + 1) - rayy) / (-sin(degToRad(raya)));
+	z = 0;
+	while z < 10:
+		rayy = int(rayy + 1);
+		rayx = rayx + delty * nexty;
+		if ddaCheckMap(rayx, rayy) == false:
+			return Vector2(rayx, rayy);
+		if Map[rayy][rayx] == 1:
+			return Vector2(rayx, rayy);
+		z = z + 1;
+	return (Vector2(rayx, rayy));
+
+func	distanceVectors(vector1: Vector2, vector2: Vector2):
+	return (
+		sqrt(
+		pow((vector2[0] - vector1[0]), 2) + 
+		pow((vector2[1] - vector1[1]), 2)));
+
+func	distComparation(ray1: Vector2, ray2: Vector2):
+	if distanceVectors(playerPos, ray1) < distanceVectors(playerPos, ray2):
+		return ray1;
+	else:
+		return ray2;
+
 # raya is ray angle
 func	ddaAlgorithm(raya: float):
 	var ray1 = Vector2(0, 0);
-	var	ray2 = 0;
+	var	ray2 = Vector2(0, 0);
 	var	result = Vector2(0, 0);
 	var	side = 0;
 	
 	if (raya < 90.0 and raya > 0):
 		ray1 = ddaCalculateXRight(raya);
-		
-		result = ray1;
+		ray2 = ddaCalculateYUp(raya);
+
+		result = distComparation(ray1, ray2);
 	elif (raya > 270.0 and raya < 360.0):
 		ray1 = ddaCalculateXRight(raya);
+		ray2 = ddaCalculateYDown(raya);
 		
-		result = ray1;
+		result = distComparation(ray1, ray2);
 	elif (raya > 90.0 and raya < 180.0):
 		ray1 = ddaCalculateXLeft(raya);
-		
-		result = ray1;
+		ray2 = ddaCalculateYUp(raya);
+
+		result = distComparation(ray1, ray2);;
 	elif (raya > 180 and raya < 270):
 		ray1 = ddaCalculateXLeft(raya);
+		ray2 = ddaCalculateYDown(raya);
 		
-		result = ray1;
+		result = distComparation(ray1, ray2);
 	elif (raya == 180 or raya == 0):
-		print("bad sector!!!");
+		if raya == 180:
+			ray1 = ddaCalculateXLeft(raya);
+		else:
+			ray1 = ddaCalculateXRight(raya);
+		result = ray1;
 	elif (raya == 90 or raya == 270):
-		print("bad sector!!!");
+		if raya == 90:
+			ray1 = ddaCalculateYUp(raya);
+		else:
+			ray1 = ddaCalculateYDown(raya);
+		result = ray1;
 	return (result);
 
 func	calcRayDist(ray: int):
@@ -244,7 +316,7 @@ func	calcRayDist(ray: int):
 	var	positionx = 0;
 
 	if !MapToogle:
-		rays[ray] = ddaAlgorithm(pa);
+		rays[ray] = ddaAlgorithm(angle);
 		#rays[ray][0] = playerPos[0] + cos(degToRad(angle)) * 5.0;
 		#rays[ray][1] = playerPos[1] - sin(degToRad(angle)) * 5.0;
 	else:
