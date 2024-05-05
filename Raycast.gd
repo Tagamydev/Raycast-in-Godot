@@ -83,29 +83,30 @@ func	drawPlayer():
 	Color.CORNFLOWER_BLUE, 5);
 	drawRays();
 
-func	caluculateUpWall(wall: float):
-	var	result = 0.0;
-	var	wallHeight = 0.0;
+func	calculateWall(wall: float):
+	var	wallStart = Vector2(i, 0);
+	var	wallEnd = Vector2(i, 0);
+	var	wallLen = 0;
+	var	result = [];
+
+	result.resize(2);
+	wallLen = 500 / wall;
+	wallStart[1] = (height / 2.0) - (wallLen / 2);
+	wallEnd[1] = (height / 2.0) + (wallLen / 2.0);
+
 	
-	result = (wall / maxdist);
-	result = result * height;
-	result = result + 100;
-	return (Vector2(i, result));
-	
-func	caluculateDownWall(wall: float):
-	var	result = 0.0;
-	var	wallHeight = 0.0;
-	
-	result = 1 - (wall / maxdist);
-	result = result * (height / 2);
-	result = result + 100;
-	return (Vector2(i, result));
+	result[0] = wallStart;
+	result[1] = wallEnd;
+	return result;
 
 func	drawWalls(iterator: int):
+	var	wall = [];
+
+	wall = calculateWall(walls[iterator][0]);
 	if walls[iterator][1] == 1:
-		draw_line(caluculateUpWall(walls[iterator][0]), caluculateDownWall(walls[iterator][0]), Color.CHARTREUSE, 1);
+		draw_line(wall[0], wall[1], Color.CHARTREUSE, 1);
 	else:
-		draw_line(caluculateUpWall(walls[iterator][0]), caluculateDownWall(walls[iterator][0]), Color.DARK_GREEN, 1);
+		draw_line(wall[0], wall[1], Color.DARK_GREEN, 1);
 
 
 func	_draw():
