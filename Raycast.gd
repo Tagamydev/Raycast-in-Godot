@@ -1,17 +1,38 @@
 extends Node2D
 
+# here is the velocity of the player.
+# I'm lazy, if this value is bigger than 1 the map breaks 
+# (Out of boundry problem)
+var	velocity = 0.1;
+
+# variables for iteration, used externally
 var	x = 0;
 var	y = 0;
 var i = 0;
+
+# screen values
 var	width = 800;
 var	height = 800;
+
+# an array for save walls distance.
 var walls = [];
-var	playerPos = Vector2(2, 2);
+var	rays = [];
+
+# variables for Player.
+var	playerPos = Vector2(1.0, 1.0);
 var	pa = 0.0;
 var	pdx = 0.0;
 var	pdy = 0.0;
+var	fov = 90.0;
+var	fovMulti = 0.0;
+
+# this arrays work as blocks in the map, 
+# you can add or edit them to make diferent maps.
 var	Map_End = [1, 1, 1, 1, 1, 1, 1, 1];
 var	Map_Mid = [1, 0, 0, 0, 0, 0, 0, 1];
+
+# place your blocks here, 
+# only dont forget to change the resolution.
 var	Map = [
 Array(Map_End.duplicate()), 
 Array(Map_Mid.duplicate()), 
@@ -22,7 +43,7 @@ Array(Map_Mid.duplicate()),
 Array(Map_Mid.duplicate()), 
 Array(Map_End.duplicate())
 ];
-var MousePos = Vector2.ZERO;
+
 var	MapToogle = true;
 
 func	degToRad(deg: float):
@@ -30,25 +51,35 @@ func	degToRad(deg: float):
 
 func	FixAng(angle: float):
 	if angle > 359.0:
-		angle = angle - 360;
+		angle = angle - 360.0;
 	if angle < 0:
-		angle = angle + 360;
-	return angle;
+		angle = angle + 360.0;
+	return float(angle);
 
+func	drawRays():
+	var	iter = 0;
+	
+	while (iter < width):
+		draw_line(
+		Vector2((playerPos[0] * 100) + 0, (playerPos[1] * 100) + 0),  
+		Vector2((rays[iter][0] * 100) + 0, (rays[iter][1] * 100) + 0), 
+		Color.DARK_GREEN, 2);
+		iter = iter + 1;
+
+#
 func	drawMap():
 	if (Map[x][y]) == 1:
 		draw_rect(Rect2(x * 100, y * 100, 100, 100), Color.BLUE);
 	elif Map[x][y] == 0:
 		draw_rect(Rect2(x * 100, y * 100, 100, 100), Color.BLACK);
-	elif Map[x][y] == 2:
-		draw_rect(Rect2(x * 100, y * 100, 100, 100), Color.BLACK);
 	
 func	drawPlayer():
-	draw_circle(Vector2((playerPos[0] * 100) + 50, (playerPos[1] * 100) + 50), 25, Color.RED);
+	draw_circle(Vector2(playerPos[0] * 100, playerPos[1] * 100), 10, Color.RED);
 	draw_line(
-	Vector2((playerPos[0] * 100) + 50, (playerPos[1] * 100) + 50), 
-	Vector2(((playerPos[0] + (pdx * 2)) * 100) + 50, ((playerPos[1] + (pdy * 2)) * 100) + 50), 
+	Vector2((playerPos[0] * 100) + 0, (playerPos[1] * 100) + 0), 
+	Vector2(((playerPos[0] + (pdx * 0.3)) * 100) + 0, ((playerPos[1] + (pdy * 0.3)) * 100) + 0), 
 	Color.CORNFLOWER_BLUE, 5);
+	drawRays();
 
 func	_draw():
 
@@ -80,19 +111,43 @@ func	_draw():
 		drawPlayer();
 
 func	_ready():
-#	get_window().size = Vector2(1920, 1080);
 	get_window().size = Vector2(800, 800);
-	walls.resize(1920);
-	walls.fill(0.0);
-	Map[2][2] = 2;
-	MapToogle = false;
-	calculate_walls();
 	
+	# set 0 and save size for the arrays
+	walls.resize(width + 1);
+	walls.fill(0.0);
+	rays.resize(width + 1);
+	rays.fill(Vector2(0, 0));
+	
+	MapToogle = false;
+	fovMulti = float(fov) / float(width);
+	calculate_walls();
+
+func	calcRayDist(ray: int):
+	var	angle = FixAng((float(pa) - (fov / 2.0)) + (ray * fovMulti));
+	var	rayx = 0;
+	var	rayy = 0;
+
+	if !MapToogle:
+		rays[ray][0] = playerPos[0] + cos(degToRad(angle)) * 5.0;
+		rays[ray][1] = playerPos[1] - sin(degToRad(angle)) * 5.0;
+	else:
+		rayx = 0;
+		rayy = 0;
+	return (1);
+
+func	raycast():
+	var ray = 0;
+
+	while ray < width:
+		walls[ray] = calcRayDist(ray);
+		ray = ray + 1;
+
 func	calculate_walls():
+	raycast();
 	queue_redraw();
 	
 func	_input(event):
-	MousePos = get_viewport().get_mouse_position();
 	if event is InputEventKey:
 		if event.keycode == KEY_M and event.is_pressed():
 			MapToogle = !MapToogle;
@@ -100,11 +155,17 @@ func	_input(event):
 			pa = FixAng(pa + 5.0);
 			pdx = cos(degToRad(pa));
 			pdy = -sin(degToRad(pa));
-			print(pa);
 		if (event.keycode == KEY_D or event.keycode == KEY_E) and event.is_pressed():
 			pa = FixAng(pa - 5.0);
 			pdx = cos(degToRad(pa));
 			pdy = -sin(degToRad(pa));
-			print(pa);
+		if (event.keycode == KEY_W or event.keycode == KEY_COMMA) and event.is_pressed():
+			if Map[int(playerPos[0] + pdx * velocity)][int(playerPos[1] + pdy * velocity)] != 1:
+				playerPos[0] = float(playerPos[0] + pdx * velocity);
+				playerPos[1] = float(playerPos[1] + pdy * velocity);
+		if (event.keycode == KEY_S or event.keycode == KEY_O) and event.is_pressed():
+			if Map[int(playerPos[0] - (pdx * velocity))][int(playerPos[1] - (pdy * velocity))] != 1:
+				playerPos[0] = float(playerPos[0] - (pdx * velocity));
+				playerPos[1] = float(playerPos[1] - (pdy * velocity));
 		calculate_walls();
 	
