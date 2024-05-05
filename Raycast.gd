@@ -30,6 +30,7 @@ var	fovMulti = 0.0;
 # you can add or edit them to make diferent maps.
 var	Map_End = [1, 1, 1, 1, 1, 1, 1, 1];
 var	Map_Mid = [1, 0, 0, 0, 0, 0, 0, 1];
+var	Map_MidE = [1, 0, 0, 0, 1, 0, 0, 1];
 
 # place your blocks here, 
 # only dont forget to change the resolution.
@@ -38,7 +39,7 @@ Array(Map_End.duplicate()),
 Array(Map_Mid.duplicate()), 
 Array(Map_Mid.duplicate()), 
 Array(Map_Mid.duplicate()), 
-Array(Map_Mid.duplicate()), 
+Array(Map_MidE.duplicate()), 
 Array(Map_Mid.duplicate()), 
 Array(Map_Mid.duplicate()), 
 Array(Map_End.duplicate())
@@ -124,35 +125,117 @@ func	_ready():
 	calculate_walls();
 
 func	ddaGetnextX(nextx: float, raya: float):
-	return((nextx - playerPos[0]) / (cos(degToRad(raya))));
+	return ((nextx - playerPos[0]) / (cos(degToRad(raya))));
 	
 
+func	ddaGetnextY(nexty: float, raya: float):
+	return ((nexty - playerPos[1]) / (-sin(degToRad(raya))));
+	
+func	ddaCheckMap(mapx: float, mapy: float):
+	if mapx < 0 or mapy < 0:
+		return (false);
+	if mapy > Map.size() or mapx > Map[0].size():
+		return (false);
+	return (true); 
+
+func	ddaCalculateXRight(raya: float):
+	var rayx = 0.0;
+	var	rayy = 0.0;
+	var	delty = 0.0;
+	var	nextx = 0.0;
+	var	z = 0;
+	
+	rayx = int(playerPos[0] + 1);
+	delty = -sin(degToRad(raya));
+	rayy = playerPos[1] + delty * ddaGetnextX(rayx, raya);
+	
+	# check if this ray hits a wall, if not then start the loop
+	if ddaCheckMap(rayx, rayy) == false:
+		return Vector2(rayx, rayy);
+	if Map[rayy][rayx] == 1:
+		return Vector2(rayx, rayy);
+		
+	nextx = (int(rayx + 1) - rayx) / (cos(degToRad(raya)));
+	z = 0;
+	while z < 10:
+		rayx = int(rayx + 1);
+		rayy = rayy + delty * nextx;
+		if ddaCheckMap(rayx, rayy) == false:
+			return Vector2(rayx, rayy);
+		if Map[rayy][rayx] == 1:
+			return Vector2(rayx, rayy);
+		z = z + 1;
+	return (Vector2(rayx, rayy));
+	
+
+func	ddaCalculateXLeft(raya: float):
+	var rayx = 0.0;
+	var	rayy = 0.0;
+	var	delty = 0.0;
+	var	nextx = 0.0;
+	var	z = 0;
+	
+	rayx = int(playerPos[0]);
+	delty = -sin(degToRad(raya));
+	rayy = playerPos[1] + delty * ddaGetnextX(rayx, raya);
+	
+	# check if this ray hits a wall, if not then start the loop
+	if ddaCheckMap(rayx - 1, rayy) == false:
+		return Vector2(rayx, rayy);
+	if Map[rayy][rayx - 1] == 1:
+		return Vector2(rayx, rayy);
+		
+	nextx = (int(rayx - 1) - rayx) / (cos(degToRad(raya)));
+	z = 0;
+	while z < 10:
+		rayx = int(rayx - 1);
+		rayy = rayy + delty * nextx;
+		if ddaCheckMap(rayx - 1, rayy) == false:
+			return Vector2(rayx, rayy);
+		if Map[rayy][rayx - 1] == 1:
+			return Vector2(rayx, rayy);
+		z = z + 1;
+	return (Vector2(rayx, rayy));
+	
+	"""
+	var rayx = 0.0;
+	var	rayy = 0.0;
+	var	nextx = 0.0;
+	
+	rayx = int(playerPos[0]);
+	rayy = playerPos[1] - sin(degToRad(raya)) * ddaGetnextX(rayx, raya);
+	
+	return (Vector2(rayx, rayy));
+	"""
+	
 # raya is ray angle
 func	ddaAlgorithm(raya: float):
-	var rayx = 0;
-	var	rayy = 0;
+	var ray1 = Vector2(0, 0);
+	var	ray2 = 0;
+	var	result = Vector2(0, 0);
+	var	side = 0;
 	
 	if (raya < 90.0 and raya > 0):
-		rayx = playerPos[0] + 1;
-		rayy = playerPos[1] - sin(degToRad(raya)) * ddaGetnextX(rayx, raya);
-		print("sector 1");
+		ray1 = ddaCalculateXRight(raya);
+		
+		result = ray1;
 	elif (raya > 270.0 and raya < 360.0):
-		rayx = playerPos[0] + 1;
-		rayy = playerPos[1] - sin(degToRad(raya)) * ddaGetnextX(rayx, raya);
-		print("sector 2");
+		ray1 = ddaCalculateXRight(raya);
+		
+		result = ray1;
 	elif (raya > 90.0 and raya < 180.0):
-		rayx = int(playerPos[0]);
-		rayy = playerPos[1] - sin(degToRad(raya)) * ddaGetnextX(rayx, raya);
-		print("sector 3");
+		ray1 = ddaCalculateXLeft(raya);
+		
+		result = ray1;
 	elif (raya > 180 and raya < 270):
-		rayx = int(playerPos[0]);
-		rayy = playerPos[1] - sin(degToRad(raya)) * ddaGetnextX(rayx, raya);
-		print("sector 4");
+		ray1 = ddaCalculateXLeft(raya);
+		
+		result = ray1;
 	elif (raya == 180 or raya == 0):
 		print("bad sector!!!");
 	elif (raya == 90 or raya == 270):
 		print("bad sector!!!");
-	return (Vector2(rayx, rayy));
+	return (result);
 
 func	calcRayDist(ray: int):
 	var	angle = FixAng((float(pa) - (fov / 2.0)) + (ray * fovMulti));
