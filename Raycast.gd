@@ -63,7 +63,7 @@ func	drawRays():
 		draw_line(
 		Vector2((playerPos[0] * 100) + 0, (playerPos[1] * 100) + 0),  
 		Vector2((rays[iter][0] * 100) + 0, (rays[iter][1] * 100) + 0), 
-		Color.DARK_GREEN, 2);
+		Color.CHARTREUSE, 2);
 		iter = iter + 1;
 
 #
@@ -123,14 +123,47 @@ func	_ready():
 	fovMulti = float(fov) / float(width);
 	calculate_walls();
 
+func	ddaGetnextX(nextx: float, raya: float):
+	return((nextx - playerPos[0]) / (cos(degToRad(raya))));
+	
+
+# raya is ray angle
+func	ddaAlgorithm(raya: float):
+	var rayx = 0;
+	var	rayy = 0;
+	
+	if (raya < 90.0 and raya > 0):
+		rayx = playerPos[0] + 1;
+		rayy = playerPos[1] - sin(degToRad(raya)) * ddaGetnextX(rayx, raya);
+		print("sector 1");
+	elif (raya > 270.0 and raya < 360.0):
+		rayx = playerPos[0] + 1;
+		rayy = playerPos[1] - sin(degToRad(raya)) * ddaGetnextX(rayx, raya);
+		print("sector 2");
+	elif (raya > 90.0 and raya < 180.0):
+		rayx = int(playerPos[0]);
+		rayy = playerPos[1] - sin(degToRad(raya)) * ddaGetnextX(rayx, raya);
+		print("sector 3");
+	elif (raya > 180 and raya < 270):
+		rayx = int(playerPos[0]);
+		rayy = playerPos[1] - sin(degToRad(raya)) * ddaGetnextX(rayx, raya);
+		print("sector 4");
+	elif (raya == 180 or raya == 0):
+		print("bad sector!!!");
+	elif (raya == 90 or raya == 270):
+		print("bad sector!!!");
+	return (Vector2(rayx, rayy));
+
 func	calcRayDist(ray: int):
 	var	angle = FixAng((float(pa) - (fov / 2.0)) + (ray * fovMulti));
 	var	rayx = 0;
 	var	rayy = 0;
+	var	positionx = 0;
 
 	if !MapToogle:
-		rays[ray][0] = playerPos[0] + cos(degToRad(angle)) * 5.0;
-		rays[ray][1] = playerPos[1] - sin(degToRad(angle)) * 5.0;
+		rays[ray] = ddaAlgorithm(pa);
+		#rays[ray][0] = playerPos[0] + cos(degToRad(angle)) * 5.0;
+		#rays[ray][1] = playerPos[1] - sin(degToRad(angle)) * 5.0;
 	else:
 		rayx = 0;
 		rayy = 0;
