@@ -25,6 +25,7 @@ var	pdx = 0.0;
 var	pdy = 0.0;
 var	fov = 90.0;
 var	fovMulti = 0.0;
+var	maxdist = 30;
 
 # this arrays work as blocks in the map, 
 # you can add or edit them to make diferent maps.
@@ -82,6 +83,31 @@ func	drawPlayer():
 	Color.CORNFLOWER_BLUE, 5);
 	drawRays();
 
+func	caluculateUpWall(wall: float):
+	var	result = 0.0;
+	var	wallHeight = 0.0;
+	
+	result = (wall / maxdist);
+	result = result * height;
+	result = result + 100;
+	return (Vector2(i, result));
+	
+func	caluculateDownWall(wall: float):
+	var	result = 0.0;
+	var	wallHeight = 0.0;
+	
+	result = 1 - (wall / maxdist);
+	result = result * (height / 2);
+	result = result + 100;
+	return (Vector2(i, result));
+
+func	drawWalls(iterator: int):
+	if walls[iterator][1] == 1:
+		draw_line(caluculateUpWall(walls[iterator][0]), caluculateDownWall(walls[iterator][0]), Color.CHARTREUSE, 1);
+	else:
+		draw_line(caluculateUpWall(walls[iterator][0]), caluculateDownWall(walls[iterator][0]), Color.DARK_GREEN, 1);
+
+
 func	_draw():
 
 	if MapToogle:
@@ -98,7 +124,7 @@ func	_draw():
 		# draw walls
 		i = 0;
 		while (i <= width):
-			draw_line(Vector2(i, 100), Vector2(i, 400), Color.DARK_GREEN, 1);
+			drawWalls(i);
 			i = i + 1;
 	else:
 		x = 0;
@@ -116,11 +142,11 @@ func	_ready():
 	
 	# set 0 and save size for the arrays
 	walls.resize(width + 1);
-	walls.fill(0.0);
+	walls.fill(Vector2(0, 0));
 	rays.resize(width + 1);
-	rays.fill(Vector2(0, 0));
+	rays.fill(Vector3(0, 0, 0));
 	
-	MapToogle = false;
+	MapToogle = true;
 	fovMulti = float(fov) / float(width);
 	calculate_walls();
 
@@ -264,15 +290,15 @@ func	distanceVectors(vector1: Vector2, vector2: Vector2):
 
 func	distComparation(ray1: Vector2, ray2: Vector2):
 	if distanceVectors(playerPos, ray1) < distanceVectors(playerPos, ray2):
-		return ray1;
+		return Vector3(ray1[0], ray1[1], 0);
 	else:
-		return ray2;
+		return Vector3(ray2[0], ray2[1], 1);
 
 # raya is ray angle
 func	ddaAlgorithm(raya: float):
 	var ray1 = Vector2(0, 0);
 	var	ray2 = Vector2(0, 0);
-	var	result = Vector2(0, 0);
+	var	result = Vector3(0, 0, 0);
 	var	side = 0;
 	
 	if (raya < 90.0 and raya > 0):
@@ -300,29 +326,24 @@ func	ddaAlgorithm(raya: float):
 			ray1 = ddaCalculateXLeft(raya);
 		else:
 			ray1 = ddaCalculateXRight(raya);
-		result = ray1;
+		result = Vector3(ray1[0], ray1[1], 0);
 	elif (raya == 90 or raya == 270):
 		if raya == 90:
 			ray1 = ddaCalculateYUp(raya);
 		else:
 			ray1 = ddaCalculateYDown(raya);
-		result = ray1;
+		result = Vector3(ray1[0], ray1[1], 1);
 	return (result);
 
 func	calcRayDist(ray: int):
 	var	angle = FixAng((float(pa) - (fov / 2.0)) + (ray * fovMulti));
-	var	rayx = 0;
-	var	rayy = 0;
-	var	positionx = 0;
+	var	distance = 0;
 
-	if !MapToogle:
-		rays[ray] = ddaAlgorithm(angle);
-		#rays[ray][0] = playerPos[0] + cos(degToRad(angle)) * 5.0;
-		#rays[ray][1] = playerPos[1] - sin(degToRad(angle)) * 5.0;
-	else:
-		rayx = 0;
-		rayy = 0;
-	return (1);
+	rays[ray] = ddaAlgorithm(angle);
+	distance = distanceVectors(playerPos, Vector2(rays[ray][0], rays[ray][1]));
+	if distance > maxdist:
+		distance = maxdist;
+	return (Vector2(distance, rays[ray][2]));
 
 func	raycast():
 	var ray = 0;
