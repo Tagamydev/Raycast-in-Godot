@@ -19,19 +19,26 @@ var walls = [];
 var	rays = [];
 
 # variables for Player.
-var	playerPos = Vector2(1.0, 1.0);
+var	playerPos = Vector2(2.0, 2.0);
 var	pa = 0.0;
 var	pdx = 0.0;
 var	pdy = 0.0;
 var	fov = 90.0;
 var	fovMulti = 0.0;
-var	maxdist = 30;
+var	maxdist = 3;
 
 # this arrays work as blocks in the map, 
 # you can add or edit them to make diferent maps.
 var	Map_End = [1, 1, 1, 1, 1, 1, 1, 1];
 var	Map_Mid = [1, 0, 0, 0, 0, 0, 0, 1];
 var	Map_MidE = [1, 0, 0, 0, 1, 0, 0, 1];
+
+# colors for walls, cealling, and fog
+var	WallColor = Color.CHARTREUSE;
+var	SideWallColor = Color.DARK_GREEN;
+var	FogColor = Color.BLACK;
+var	GroundColor = Color.AQUAMARINE;
+var	SkyColor = Color.CORNFLOWER_BLUE;
 
 # place your blocks here, 
 # only dont forget to change the resolution.
@@ -56,7 +63,7 @@ func	FixAng(angle: float):
 		angle = angle - 360.0;
 	if angle < 0:
 		angle = angle + 360.0;
-	return float(angle);
+	return (float(angle));
 
 func	drawRays():
 	var	iter = 0;
@@ -97,16 +104,20 @@ func	calculateWall(wall: float):
 	
 	result[0] = wallStart;
 	result[1] = wallEnd;
-	return result;
+	return (result);
 
 func	drawWalls(iterator: int):
 	var	wall = [];
-
+	var	distanceShadow = walls[iterator][0] / maxdist;
+	
+	distanceShadow = distanceShadow;
 	wall = calculateWall(walls[iterator][0]);
 	if walls[iterator][1] == 1:
-		draw_line(wall[0], wall[1], Color.CHARTREUSE, 1);
+		draw_line(wall[0], wall[1], WallColor.lerp(FogColor, distanceShadow), 1);
+	elif walls[iterator][1] == 0:
+		draw_line(wall[0], wall[1], SideWallColor.lerp(FogColor, distanceShadow), 1);
 	else:
-		draw_line(wall[0], wall[1], Color.DARK_GREEN, 1);
+		draw_line(wall[0], wall[1], Color.BLACK, 1);
 
 
 func	_draw():
@@ -116,10 +127,10 @@ func	_draw():
 		# draw lines and sky
 		i = 0;
 		while (i < height / 2):
-			draw_line(Vector2(0, i), Vector2(width, i), Color.AQUAMARINE, 1);
+			draw_line(Vector2(0, i), Vector2(width, i), SkyColor.lerp(FogColor, i / ((height / 2.0) - 100)), 1);
 			i = i + 1;
 		for j in (height / 2):
-			draw_line(Vector2(0, i), Vector2(width, i), Color.CORNFLOWER_BLUE, 1);
+			draw_line(Vector2(0, i + 84), Vector2(width, i + 84), GroundColor.lerp(FogColor, 1 - j / (height / 1.5)), 1);
 			i = i + 1;
 
 		# draw walls
@@ -339,17 +350,24 @@ func	ddaAlgorithm(raya: float):
 func	calcRayDist(ray: int):
 	var	angle = FixAng((float(pa) - (fov / 2.0)) + (ray * fovMulti));
 	var	distance = 0;
+	var	fishEye = 0.0;
 
 	rays[ray] = ddaAlgorithm(angle);
 	distance = distanceVectors(playerPos, Vector2(rays[ray][0], rays[ray][1]));
+	# only for fix fish eye in the camera
+	fishEye = FixAng(pa - angle);
+	distance = distance * cos(degToRad(fishEye));
+	# this is for the fog
 	if distance > maxdist:
 		distance = maxdist;
-	return (Vector2(distance, rays[ray][2]));
+		return (Vector2(distance, 2));
+	else:
+		return (Vector2(distance, rays[ray][2]));
 
 func	raycast():
 	var ray = 0;
 
-	while ray < width:
+	while ray <= width:
 		walls[ray] = calcRayDist(ray);
 		ray = ray + 1;
 
