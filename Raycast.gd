@@ -39,6 +39,7 @@ var	SideWallColor = Color.DARK_GREEN;
 var	FogColor = Color.BLACK;
 var	GroundColor = Color.AQUAMARINE;
 var	SkyColor = Color.CORNFLOWER_BLUE;
+var	MidTone = Color.CADET_BLUE;
 
 # place your blocks here, 
 # only dont forget to change the resolution.
@@ -106,6 +107,12 @@ func	calculateWall(wall: float):
 	result[1] = wallEnd;
 	return (result);
 
+func	MidColor(color: Color):
+	#	change this value to change mid color weight
+	var colorWeight = 0.1;
+
+	return (color.lerp(MidTone, colorWeight));
+
 func	drawWalls(iterator: int):
 	var	wall = [];
 	var	distanceShadow = walls[iterator][0] / maxdist;
@@ -113,11 +120,13 @@ func	drawWalls(iterator: int):
 	distanceShadow = distanceShadow;
 	wall = calculateWall(walls[iterator][0]);
 	if walls[iterator][1] == 1:
-		draw_line(wall[0], wall[1], WallColor.lerp(FogColor, distanceShadow), 1);
+		draw_line(wall[0], wall[1], 
+		MidColor(WallColor.lerp(FogColor, distanceShadow)), 1);
 	elif walls[iterator][1] == 0:
-		draw_line(wall[0], wall[1], SideWallColor.lerp(FogColor, distanceShadow), 1);
+		draw_line(wall[0], wall[1], 
+		MidColor(SideWallColor.lerp(FogColor, distanceShadow)), 1);
 	else:
-		draw_line(wall[0], wall[1], Color.BLACK, 1);
+		draw_line(wall[0], wall[1], MidColor(FogColor), 1);
 
 
 func	_draw():
@@ -127,10 +136,12 @@ func	_draw():
 		# draw lines and sky
 		i = 0;
 		while (i < height / 2):
-			draw_line(Vector2(0, i), Vector2(width, i), SkyColor.lerp(FogColor, i / ((height / 2.0) - 100)), 1);
+			draw_line(Vector2(0, i), Vector2(width, i), 
+			MidColor(SkyColor.lerp(FogColor, i / ((height / 2.0) - 81))), 1);
 			i = i + 1;
 		for j in (height / 2):
-			draw_line(Vector2(0, i + 84), Vector2(width, i + 84), GroundColor.lerp(FogColor, 1 - j / (height / 1.5)), 1);
+			draw_line(Vector2(0, i + 81), Vector2(width, i + 81), 
+			MidColor(GroundColor.lerp(FogColor, 1 - j / (height / 1.5))), 1);
 			i = i + 1;
 
 		# draw walls
@@ -379,11 +390,11 @@ func	_input(event):
 	if event is InputEventKey:
 		if event.keycode == KEY_M and event.is_pressed():
 			MapToogle = !MapToogle;
-		if event.keycode == KEY_A and event.is_pressed():
+		if (event.keycode == KEY_D or event.keycode == KEY_E) and event.is_pressed():
 			pa = FixAng(pa + 5.0);
 			pdx = cos(degToRad(pa));
 			pdy = -sin(degToRad(pa));
-		if (event.keycode == KEY_D or event.keycode == KEY_E) and event.is_pressed():
+		if event.keycode == KEY_A and event.is_pressed():
 			pa = FixAng(pa - 5.0);
 			pdx = cos(degToRad(pa));
 			pdy = -sin(degToRad(pa));
